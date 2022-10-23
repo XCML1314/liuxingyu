@@ -1,215 +1,366 @@
 <!DOCTYPE html>
 <html>
-<head>
-    <meta charset="utf-8">
-    <title>流星雨</title>
-    <script>
-        var context;
-        var arr = new Array();
-        var starCount = 800;
-        var rains = new Array();
-        var rainCount = 20;
-
-        function init() {
-            var stars = document.getElementById("stars");
-            windowWidth = window.innerWidth; //当前的窗口的高度
-            stars.width = windowWidth;
-            stars.height = window.innerHeight;
-            context = stars.getContext("2d");
-        }
-
-        //创建一个星星对象
-        var Star = function () {
-            this.x = windowWidth * Math.random();//横坐标
-            this.y = 5000 * Math.random();//纵坐标
-            this.text = ".";//文本
-            this.color = "white";//颜色
-            this.getColor = function () {
-                var _r = Math.random();
-                if (_r < 0.5) {
-                    this.color = "#333";
-                } else {
-                    this.color = "white";
-                }
-            }
-//初始化
-            this.init = function () {
-                this.getColor();
-            }
-//绘制
-            this.draw = function () {
-                context.fillStyle = this.color;
-                context.fillText(this.text, this.x, this.y);
-            }
-        }
-
-        //画月亮
-        function drawMoon() {
-            var moon = new Image();
-            moon.src = "./images/moon.jpg"
-            context.drawImage(moon, -5, -10);
-        }
-
-        //页面加载的时候
-        window.onload = function () {
-            init();
-//画星星
-            for (var i = 0; i < starCount; i++) {
-                var star = new Star();
-                star.init();
-                star.draw();
-                arr.push(star);
-            }
-//画流星
-            for (var i = 0; i < rainCount; i++) {
-                var rain = new MeteorRain();
-                rain.init();
-                rain.draw();
-                rains.push(rain);
-            }
-            drawMoon();//绘制月亮
-            playStars();//绘制闪动的星星
-            playRains();//绘制流星
-
-        }
-
-        //星星闪起来
-        function playStars() {
-            for (var n = 0; n < starCount; n++) {
-                arr[n].getColor();
-                arr[n].draw();
-            }
-
-            setTimeout("playStars()", 100);
-        }
-
-        /*流星雨开始*/
-        var MeteorRain = function () {
-            this.x = -1;
-            this.y = -1;
-            this.length = -1;//长度
-            this.angle = 30; //倾斜角度
-            this.width = -1;//宽度
-            this.height = -1;//高度
-            this.speed = 1;//速度
-            this.offset_x = -1;//横轴移动偏移量
-            this.offset_y = -1;//纵轴移动偏移量
-            this.alpha = 1; //透明度
-            this.color1 = "";//流星的色彩
-            this.color2 = ""; //流星的色彩
-            /****************初始化函数********************/
-            this.init = function () //初始化
-            {
-                this.getPos();
-                this.alpha = 1;//透明度
-                this.getRandomColor();
-//最小长度，最大长度
-                var x = Math.random() * 80 + 150;
-                this.length = Math.ceil(x);
-// x = Math.random()*10+30;
-                this.angle = 30; //流星倾斜角
-                x = Math.random() + 0.5;
-                this.speed = Math.ceil(x); //流星的速度
-                var cos = Math.cos(this.angle * 3.14 / 180);
-                var sin = Math.sin(this.angle * 3.14 / 180);
-                this.width = this.length * cos; //流星所占宽度
-                this.height = this.length * sin;//流星所占高度
-                this.offset_x = this.speed * cos;
-                this.offset_y = this.speed * sin;
-            }
-            /**************获取随机颜色函数*****************/
-            this.getRandomColor = function () {
-                var a = Math.ceil(255 - 240 * Math.random());
-//中段颜色
-                this.color1 = "rgba(" + a + "," + a + "," + a + ",1)";
-//结束颜色
-                this.color2 = "black";
-            }
-            /***************重新计算流星坐标的函数******************/
-            this.countPos = function ()//
-            {
-//往左下移动,x减少，y增加
-                this.x = this.x - this.offset_x;
-                this.y = this.y + this.offset_y;
-            }
-            /*****************获取随机坐标的函数*****************/
-            this.getPos = function () //
-            {
-//横坐标200--1200
-                this.x = Math.random() * window.innerWidth; //窗口高度
-//纵坐标小于600
-                this.y = Math.random() * window.innerHeight; //窗口宽度
-            }
-            /****绘制流星***************************/
-            this.draw = function () //绘制一个流星的函数
-            {
-                context.save();
-                context.beginPath();
-                context.lineWidth = 1; //宽度
-                context.globalAlpha = this.alpha; //设置透明度
-//创建横向渐变颜色,起点坐标至终点坐标
-                var line = context.createLinearGradient(this.x, this.y,
-                    this.x + this.width,
-                    this.y - this.height);
-//分段设置颜色
-                line.addColorStop(0, "white");
-                line.addColorStop(0.3, this.color1);
-                line.addColorStop(0.6, this.color2);
-                context.strokeStyle = line;
-//起点
-                context.moveTo(this.x, this.y);
-//终点
-                context.lineTo(this.x + this.width, this.y - this.height);
-                context.closePath();
-                context.stroke();
-                context.restore();
-            }
-            this.move = function () {
-//清空流星像素
-                var x = this.x + this.width - this.offset_x;
-                var y = this.y - this.height;
-                context.clearRect(x - 3, y - 3, this.offset_x + 5, this.offset_y + 5);
-// context.strokeStyle="red";
-// context.strokeRect(x,y-1,this.offset_x+1,this.offset_y+1);
-//重新计算位置，往左下移动
-                this.countPos();
-//透明度增加
-                this.alpha -= 0.002;
-//重绘
-                this.draw();
-            }
-        }
-
-        //绘制流星
-        function playRains() {
-
-            for (var n = 0; n < rainCount; n++) {
-                var rain = rains[n];
-                rain.move();//移动
-                if (rain.y > window.innerHeight) {//超出界限后重来
-                    context.clearRect(rain.x, rain.y - rain.height, rain.width, rain.height);
-                    rains[n] = new MeteorRain();
-                    rains[n].init();
-                }
-            }
-            setTimeout("playRains()", 2);
-        }
-
-        /*流星雨结束*/
-    </script>
-    <style type="text/css">
-        body {
-            background-color: black;
-        }
-
-        body, html {
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-        }
+  <head>
+    <meta charset="utf-8" />
+    <title></title>
+    <script src="js/jquery.min.js"></script>
+    <link type="text/css" href="./css/style.css" rel="stylesheet" />
+    <style>
+      html,
+      body {
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+      }
+      .container {
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        padding: 0;
+        background-color: #000000;
+      }
     </style>
-</head>
-<body>
-<canvas id="stars"></canvas>
-</body>
+  </head>
+  <body>
+    <audio autoplay="autopaly">
+      <source src="renxi.mp3" type="audio/mp3" />
+    </audio>
+    <div id="jsi-cherry-container" class="container">
+      <div class="box">
+        <ul class="minbox">
+          <li></li>
+          <li></li>
+          <li></li>
+          <li></li>
+          <li></li>
+          <li></li>
+        </ul>
+        <ol class="maxbox">
+          <li></li>
+          <li></li>
+          <li></li>
+          <li></li>
+          <li></li>
+          <li></li>
+        </ol>
+      </div>
+    </div>
+
+    <script>
+      var RENDERER = {
+        INIT_CHERRY_BLOSSOM_COUNT: 30,
+        MAX_ADDING_INTERVAL: 10,
+
+        init: function() {
+          this.setParameters();
+          this.reconstructMethods();
+          this.createCherries();
+          this.render();
+          if (
+            navigator.userAgent.match(
+              /(phone|pod|iPhone|iPod|ios|Android|Mobile|BlackBerry|IEMobile|MQQBrowser|JUC|Fennec|wOSBrowser|BrowserNG|WebOS|Symbian|Windows Phone)/i
+            )
+          ) {
+            var box = document.querySelectorAll('.box')[0];
+            console.log(box, '移动端');
+            box.style.marginTop = '65%';
+          }
+        },
+        setParameters: function() {
+          this.$container = $('#jsi-cherry-container');
+          this.width = this.$container.width();
+          this.height = this.$container.height();
+          this.context = $('<canvas />')
+            .attr({ width: this.width, height: this.height })
+            .appendTo(this.$container)
+            .get(0)
+            .getContext('2d');
+          this.cherries = [];
+          this.maxAddingInterval = Math.round(
+            (this.MAX_ADDING_INTERVAL * 1000) / this.width
+          );
+          this.addingInterval = this.maxAddingInterval;
+        },
+        reconstructMethods: function() {
+          this.render = this.render.bind(this);
+        },
+        createCherries: function() {
+          for (
+            var i = 0,
+              length = Math.round(
+                (this.INIT_CHERRY_BLOSSOM_COUNT * this.width) / 1000
+              );
+            i < length;
+            i++
+          ) {
+            this.cherries.push(new CHERRY_BLOSSOM(this, true));
+          }
+        },
+        render: function() {
+          requestAnimationFrame(this.render);
+          this.context.clearRect(0, 0, this.width, this.height);
+
+          this.cherries.sort(function(cherry1, cherry2) {
+            return cherry1.z - cherry2.z;
+          });
+          for (var i = this.cherries.length - 1; i >= 0; i--) {
+            if (!this.cherries[i].render(this.context)) {
+              this.cherries.splice(i, 1);
+            }
+          }
+          if (--this.addingInterval == 0) {
+            this.addingInterval = this.maxAddingInterval;
+            this.cherries.push(new CHERRY_BLOSSOM(this, false));
+          }
+        }
+      };
+      var CHERRY_BLOSSOM = function(renderer, isRandom) {
+        this.renderer = renderer;
+        this.init(isRandom);
+      };
+      CHERRY_BLOSSOM.prototype = {
+        FOCUS_POSITION: 300,
+        FAR_LIMIT: 600,
+        MAX_RIPPLE_COUNT: 100,
+        RIPPLE_RADIUS: 100,
+        SURFACE_RATE: 0.5,
+        SINK_OFFSET: 20,
+
+        init: function(isRandom) {
+          this.x = this.getRandomValue(
+            -this.renderer.width,
+            this.renderer.width
+          );
+          this.y = isRandom
+            ? this.getRandomValue(0, this.renderer.height)
+            : this.renderer.height * 1.5;
+          this.z = this.getRandomValue(0, this.FAR_LIMIT);
+          this.vx = this.getRandomValue(-2, 2);
+          this.vy = -2;
+          this.theta = this.getRandomValue(0, Math.PI * 2);
+          this.phi = this.getRandomValue(0, Math.PI * 2);
+          this.psi = 0;
+          this.dpsi = this.getRandomValue(Math.PI / 600, Math.PI / 300);
+          this.opacity = 0;
+          this.endTheta = false;
+          this.endPhi = false;
+          this.rippleCount = 0;
+
+          var axis = this.getAxis(),
+            theta =
+              this.theta +
+              (Math.ceil(
+                -(this.y + this.renderer.height * this.SURFACE_RATE) / this.vy
+              ) *
+                Math.PI) /
+                500;
+          theta %= Math.PI * 2;
+
+          this.offsetY =
+            40 * (theta <= Math.PI / 2 || theta >= (Math.PI * 3) / 2 ? -1 : 1);
+          this.thresholdY =
+            this.renderer.height / 2 +
+            this.renderer.height * this.SURFACE_RATE * axis.rate;
+          this.entityColor = this.renderer.context.createRadialGradient(
+            0,
+            40,
+            0,
+            0,
+            40,
+            80
+          );
+          this.entityColor.addColorStop(
+            0,
+            'hsl(330, 70%, ' + 50 * (0.3 + axis.rate) + '%)'
+          );
+          this.entityColor.addColorStop(
+            0.05,
+            'hsl(330, 40%,' + 55 * (0.3 + axis.rate) + '%)'
+          );
+          this.entityColor.addColorStop(
+            1,
+            'hsl(330, 20%, ' + 70 * (0.3 + axis.rate) + '%)'
+          );
+          this.shadowColor = this.renderer.context.createRadialGradient(
+            0,
+            40,
+            0,
+            0,
+            40,
+            80
+          );
+          this.shadowColor.addColorStop(
+            0,
+            'hsl(330, 40%, ' + 30 * (0.3 + axis.rate) + '%)'
+          );
+          this.shadowColor.addColorStop(
+            0.05,
+            'hsl(330, 40%,' + 30 * (0.3 + axis.rate) + '%)'
+          );
+          this.shadowColor.addColorStop(
+            1,
+            'hsl(330, 20%, ' + 40 * (0.3 + axis.rate) + '%)'
+          );
+        },
+        getRandomValue: function(min, max) {
+          return min + (max - min) * Math.random();
+        },
+        getAxis: function() {
+          var rate = this.FOCUS_POSITION / (this.z + this.FOCUS_POSITION),
+            x = this.renderer.width / 2 + this.x * rate,
+            y = this.renderer.height / 2 - this.y * rate;
+          return { rate: rate, x: x, y: y };
+        },
+        renderCherry: function(context, axis) {
+          context.beginPath();
+          context.moveTo(0, 40);
+          context.bezierCurveTo(-60, 20, -10, -60, 0, -20);
+          context.bezierCurveTo(10, -60, 60, 20, 0, 40);
+          context.fill();
+
+          for (var i = -4; i < 4; i++) {
+            context.beginPath();
+            context.moveTo(0, 40);
+            context.quadraticCurveTo(i * 12, 10, i * 4, -24 + Math.abs(i) * 2);
+            context.stroke();
+          }
+        },
+        render: function(context) {
+          var axis = this.getAxis();
+
+          if (
+            axis.y == this.thresholdY &&
+            this.rippleCount < this.MAX_RIPPLE_COUNT
+          ) {
+            context.save();
+            context.lineWidth = 2;
+            context.strokeStyle =
+              'hsla(0, 0%, 100%, ' +
+              (this.MAX_RIPPLE_COUNT - this.rippleCount) /
+                this.MAX_RIPPLE_COUNT +
+              ')';
+            context.translate(
+              axis.x +
+                this.offsetY * axis.rate * (this.theta <= Math.PI ? -1 : 1),
+              axis.y
+            );
+            context.scale(1, 0.3);
+            context.beginPath();
+            context.arc(
+              0,
+              0,
+              (this.rippleCount / this.MAX_RIPPLE_COUNT) *
+                this.RIPPLE_RADIUS *
+                axis.rate,
+              0,
+              Math.PI * 2,
+              false
+            );
+            context.stroke();
+            context.restore();
+            this.rippleCount++;
+          }
+          if (axis.y < this.thresholdY || !this.endTheta || !this.endPhi) {
+            if (this.y <= 0) {
+              this.opacity = Math.min(this.opacity + 0.01, 1);
+            }
+            context.save();
+            context.globalAlpha = this.opacity;
+            context.fillStyle = this.shadowColor;
+            context.strokeStyle =
+              'hsl(330, 30%,' + 40 * (0.3 + axis.rate) + '%)';
+            context.translate(
+              axis.x,
+              Math.max(axis.y, this.thresholdY + this.thresholdY - axis.y)
+            );
+            context.rotate(Math.PI - this.theta);
+            context.scale(axis.rate * -Math.sin(this.phi), axis.rate);
+            context.translate(0, this.offsetY);
+            this.renderCherry(context, axis);
+            context.restore();
+          }
+          context.save();
+          context.fillStyle = this.entityColor;
+          context.strokeStyle = 'hsl(330, 40%,' + 70 * (0.3 + axis.rate) + '%)';
+          context.translate(
+            axis.x,
+            axis.y + Math.abs(this.SINK_OFFSET * Math.sin(this.psi) * axis.rate)
+          );
+          context.rotate(this.theta);
+          context.scale(axis.rate * Math.sin(this.phi), axis.rate);
+          context.translate(0, this.offsetY);
+          this.renderCherry(context, axis);
+          context.restore();
+
+          if (this.y <= -this.renderer.height / 4) {
+            if (!this.endTheta) {
+              for (
+                var theta = Math.PI / 2, end = (Math.PI * 3) / 2;
+                theta <= end;
+                theta += Math.PI
+              ) {
+                if (this.theta < theta && this.theta + Math.PI / 200 > theta) {
+                  this.theta = theta;
+                  this.endTheta = true;
+                  break;
+                }
+              }
+            }
+            if (!this.endPhi) {
+              for (
+                var phi = Math.PI / 8, end = (Math.PI * 7) / 8;
+                phi <= end;
+                phi += (Math.PI * 3) / 4
+              ) {
+                if (this.phi < phi && this.phi + Math.PI / 200 > phi) {
+                  this.phi = Math.PI / 8;
+                  this.endPhi = true;
+                  break;
+                }
+              }
+            }
+          }
+          if (!this.endTheta) {
+            if (axis.y == this.thresholdY) {
+              this.theta +=
+                (Math.PI / 200) *
+                (this.theta < Math.PI / 2 ||
+                (this.theta >= Math.PI && this.theta < (Math.PI * 3) / 2)
+                  ? 1
+                  : -1);
+            } else {
+              this.theta += Math.PI / 500;
+            }
+            this.theta %= Math.PI * 2;
+          }
+          if (this.endPhi) {
+            if (this.rippleCount == this.MAX_RIPPLE_COUNT) {
+              this.psi += this.dpsi;
+              this.psi %= Math.PI * 2;
+            }
+          } else {
+            this.phi += Math.PI / (axis.y == this.thresholdY ? 200 : 500);
+            this.phi %= Math.PI;
+          }
+          if (this.y <= -this.renderer.height * this.SURFACE_RATE) {
+            this.x += 2;
+            this.y = -this.renderer.height * this.SURFACE_RATE;
+          } else {
+            this.x += this.vx;
+            this.y += this.vy;
+          }
+          return (
+            this.z > -this.FOCUS_POSITION &&
+            this.z < this.FAR_LIMIT &&
+            this.x < this.renderer.width * 1.5
+          );
+        }
+      };
+      $(function() {
+        RENDERER.init();
+      });
+    </script>
+  </body>
 </html>
